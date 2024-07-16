@@ -26,6 +26,6 @@ static struct fuse_operations operations = {
 };
 
 int main(int argc, char *argv[]) {
-    init_fs();
+    init_fs("fs.db");
     return fuse_main(argc, argv, &operations, NULL);
 }

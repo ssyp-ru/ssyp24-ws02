@@ -7,7 +7,7 @@
 #include <fuse.h>
 
 // initialize fs structures
-void init_fs();
+void init_fs(char *db_path);
 
 /** Get file attributes.
  *
