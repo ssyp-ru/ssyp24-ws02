@@ -14,6 +14,3 @@ run: mem_fs
 clean:
 	rm -f *.o
 	rm -f mem_fs
-
-format:
-	clang-format -style=file -i main.c
