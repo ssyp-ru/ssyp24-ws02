@@ -56,15 +56,13 @@ int do_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) 
 
 /** Read directory
  *
- * The filesystem may choose between two modes of operation:
- *
  * 1) The readdir implementation ignores the offset parameter, and
  * passes zero to the filler function's offset.  The filler
  * function will not return '1' (unless an error happens), so the
  * whole directory is read in a single readdir operation.
  *
  * 2) The readdir implementation keeps track of the offsets of the
- * directory entries.  It uses the offset parameter and always
+ * directory entries. It uses the offset parameter and always
  * passes non-zero offset to the filler function.  When the buffer
  * is full (or an error happens) the filler function will return
  * '1'.
@@ -72,7 +70,12 @@ int do_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) 
 int do_readdir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi,
                enum fuse_readdir_flags flags) {
     printf("FUSE: do_readdir: %s\n", path);
-
+    
+   for (int i = 0; i < files_len; i++) {
+	filler(buffer, ".", NULL, 0, 0);
+   	printf("%s", files[i]);
+   }
+	
     filler(buffer, ".", NULL, 0, 0);  // Current Directory
     filler(buffer, "..", NULL, 0, 0); // Parent Directory
 
@@ -250,6 +253,7 @@ int do_truncate(const char *path, off_t offset, struct fuse_file_info *fi) {
  * expected to reset the setuid and setgid bits.
  */
 int do_write(const char *path, const char *buffer, size_t buffer_size, off_t offset, struct fuse_file_info *fi) {
+    
     printf("FUSE: do_write, path=%s\n", path);
     return buffer_size;
 }
@@ -373,7 +377,20 @@ void do_destroy(void *private_data) {
  * will be called instead.
  */
 int do_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
-    printf("FUSE: do_create, path=%s\n", path);
+   // printf("FUSE: do_create, path=%s\n", path);
+    struct stat hello_stat;
+    hello_stat.st_mode = S_IFREG | 0666;
+    hello_stat.st_nlink = 1;
+    hello_stat.st_size = 20;
+    hello_stat.st_uid = 666;
+    hello_stat.st_gid = 666;
+    strcpy(files[files_len].path, "/hello1");
+    files[files_len].stat = hello_stat;
+    files[files_len].data_len = 0;
+    char *hello_data = "hello from fuse\n";
+    files[files_len].data_len = strlen(hello_data);
+    memcpy(files[files_len].data, hello_data, files[files_len].data_len);
+    files_len++;
     return 0;
 }
 /**
