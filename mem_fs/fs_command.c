@@ -79,8 +79,10 @@ int do_readdir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t off
     if (strcmp(path, "/") == 0) // If the user is trying to show the files/directories of the root
                                 // directory show the following
     {
-        filler(buffer, "hello1", NULL, 0, 0);
-        filler(buffer, "hello2", NULL, 0, 0);
+	for(int i = 0; i < files_len; i++) {
+	    filler(buffer, files[i].path + 1, NULL, 0, 0);
+	    printf("%s\n", files[i].path + 1);
+	}
     }
 
     return 0;
