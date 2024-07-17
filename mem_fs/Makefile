@@ -1,16 +1,19 @@
-build: mem_fs
+build: hello_fs
 
 CFLAGS=-Werror -Wall -pedantic `pkg-config fuse3 --cflags --libs`
 
-mem_fs: main.c fs_command.o
-	gcc main.c fs_command.o -o mem_fs $(CFLAGS) 
+hello_fs: main.c fs_command.o
+	gcc main.c fs_command.o -o hello_fs $(CFLAGS) 
 
 fs_command.o: fs_command.c fs_command.h
 	gcc -c fs_command.c $(CFLAGS) 
 
-run: mem_fs
-	./mem_fs -f mount
+run: hello_fs
+	./hello_fs -f mount
 
 clean:
-	rm -f *.o
-	rm -f mem_fs
+	rm *.o
+	rm hello_fs
+
+format:
+	clang-format -style=file -i main.c

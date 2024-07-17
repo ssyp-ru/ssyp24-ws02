@@ -34,10 +34,16 @@ int files_len = 0;
  * may also be NULL if the file is open.
  */
 int do_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) {
+    //return -ENOENT;
     printf("FUSE: do_getattr: %s\n", path);
     (void)fi;
     int res = 0;
-
+    int i = 0;
+    for(;strcmp(files[i].path, path) != 0 && i<MAX_FILE_NUM;i++){
+    }
+    if(strcmp(files[i].path, path) != 0){
+    	return -ENOENT;
+    }
     memset(stbuf, 0, sizeof(struct stat));
     if (strcmp(path, "/") == 0) {
         stbuf->st_mode = S_IFDIR | 0755;
@@ -73,14 +79,15 @@ int do_readdir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t off
                enum fuse_readdir_flags flags) {
     printf("FUSE: do_readdir: %s\n", path);
 
-    filler(buffer, ".", NULL, 0, 0);  // Current Directory
-    filler(buffer, "..", NULL, 0, 0); // Parent Directory
+//    filler(buffer, ".", NULL, 0, 0);  // Current Directory
+//    filler(buffer, "..", NULL, 0, 0); // Parent Directory
 
     if (strcmp(path, "/") == 0) // If the user is trying to show the files/directories of the root
                                 // directory show the following
-    {
-        filler(buffer, "hello1", NULL, 0, 0);
-        filler(buffer, "hello2", NULL, 0, 0);
+    {	
+	for(int i = 0;i < MAX_FILE_NUM;i++){
+        	filler(buffer, files[i].path, NULL, 0, 0);
+	}
     }
 
     return 0;
@@ -135,12 +142,14 @@ int do_readdir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t off
  */
 int do_open(const char *path, struct fuse_file_info *fi) {
     printf("FUSE: do_open=%s\n", path);
-    if (strcmp(path + 1, "hello1") != 0)
+    int i = 0;
+    for(;strcmp(files[i].path,path+1) && i < files_len;i++){}
+    if (strcmp(path + 1, files[i].path) != 0)
         return -ENOENT;
 
     if ((fi->flags & O_ACCMODE) != O_RDONLY)
-        return 0;
-    // return -EACCES;
+       // return 0;
+        return -EACCES;
 
     return 0;
 }
@@ -158,10 +167,12 @@ int do_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_
     printf("FUSE: do_read: path=%s buf_size=%ld offset=%ld\n", path, size, offset);
     size_t len;
     (void)fi;
-    if (strcmp(path + 1, "hello1") != 0)
+    int i = 0;
+    for(;strcmp(files[i].path,path+1) && i < files_len;i++){}
+    if (strcmp(path+1, files[i].path) != 0)
         return -ENOENT;
 
-    char *data = "hi from fuse\n";
+    char *data = files[i].data;
     len = strlen(data);
     if (offset < len) {
         if (offset + size > len)
@@ -199,9 +210,17 @@ int do_rmdir(const char *path) {
  * must atomically exchange the two files, i.e. both must
  * exist and neither may be deleted.
  */
-int do_rename(const char *oldpath, const char *newpath, unsigned int flags) {
-    printf("FUSE: do_rename, oldpath=%s newpath=%s\n", oldpath, newpath);
-    return 0;
+int do_rename(const char *oldpath, const char *newpath, unsigned int flags){
+	printf("FUSE: do_rename, oldpath=%s newpath=%s\n", oldpath, newpath);
+    	int i = 0;
+	for(;strcmp(files[i].path,oldpath) && i < files_len;i++){}
+    	if (strcmp(oldpath, files[i].path) != 0){
+		
+	//
+	}
+	strcpy(files[i].path, newpath);
+
+	return 0;
 }
 
 /** Change the permission bits of a file
@@ -251,6 +270,8 @@ int do_truncate(const char *path, off_t offset, struct fuse_file_info *fi) {
  */
 int do_write(const char *path, const char *buffer, size_t buffer_size, off_t offset, struct fuse_file_info *fi) {
     printf("FUSE: do_write, path=%s\n", path);
+    files[files_len].data_len = strlen(buffer);
+    memcpy(files[files_len].data, buffer, files[files_len].data_len);
     return buffer_size;
 }
 
@@ -373,8 +394,18 @@ void do_destroy(void *private_data) {
  * will be called instead.
  */
 int do_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
-    printf("FUSE: do_create, path=%s\n", path);
-    return 0;
+     	 struct stat hello_stat;
+     	 hello_stat.st_mode = S_IFREG | 0666;
+    	 hello_stat.st_nlink = 1;
+    	 hello_stat.st_size = 20;
+    	 hello_stat.st_uid = 666;
+    	 hello_stat.st_gid = 666;
+    	 strcpy(files[files_len].path, path);
+    	 files[files_len].stat = hello_stat;
+   	 files[files_len].data_len = 0;
+   	 files_len++;
+ 	 printf("FUSE: do_create, path=%s\n", path);
+    	 return 0;
 }
 /**
  * Check file access permissions
@@ -390,8 +421,7 @@ int do_access(const char *path, int wtf) {
     return 0;
 }
 
-void init_fs() {
-    // initialize files with "hello1"
+void init_fs() { 
     struct stat hello_stat;
     hello_stat.st_mode = S_IFREG | 0666;
     hello_stat.st_nlink = 1;
@@ -405,4 +435,7 @@ void init_fs() {
     files[files_len].data_len = strlen(hello_data);
     memcpy(files[files_len].data, hello_data, files[files_len].data_len);
     files_len++;
+
 }
+    // initialize files with "hello1"
+
