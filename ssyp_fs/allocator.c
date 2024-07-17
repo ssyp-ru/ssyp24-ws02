@@ -1,7 +1,8 @@
 #include "allocator.h"
+#include "block.h"
 
-block_sect allocate_blocks(fs *fs, int num) {
-    block_sect b;
+block_section allocate_blocks(fs *fs, int num) {
+    block_section b;
     b.start = fs->super_block->used_blocks;
     b.len = num;
 

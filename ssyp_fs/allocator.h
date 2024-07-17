@@ -4,6 +4,6 @@
 #include "block.h"
 #include "fs.h"
 
-block_sect allocate_blocks(fs *fs, int num);
+block_section allocate_blocks(fs *fs, int num);
 
 #endif
