@@ -82,6 +82,10 @@ int do_readdir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t off
         filler(buffer, "hello1", NULL, 0, 0);
         filler(buffer, "hello2", NULL, 0, 0);
     }
+    for (int i=0;i<files_len;i++){
+	    filler(buffer,files[i],NULL,0,0);
+	    printf("%s",files[i]);
+    }
 
     return 0;
 }
@@ -372,8 +376,10 @@ void do_destroy(void *private_data) {
  * versions earlier than 2.6.15, the mknod() and open() methods
  * will be called instead.
  */
-int do_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
+int do_create(const char *path, mode_t mode, struct fuse_file_info *fi) 
     printf("FUSE: do_create, path=%s\n", path);
+    
+    
     return 0;
 }
 /**
@@ -403,6 +409,5 @@ void init_fs() {
     files[files_len].data_len = 0;
     char *hello_data = "hello from fuse\n";
     files[files_len].data_len = strlen(hello_data);
-    memcpy(files[files_len].data, hello_data, files[files_len].data_len);
     files_len++;
 }
