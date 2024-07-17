@@ -6,18 +6,17 @@
 #include "inode.h"
 
 #define SUPER_BLOCK_MAGIC 0x53535950
+#define CURRENT_VERSION 1
 
 typedef struct {
     uint16_t start;
     uint16_t len;
-} block_sect;
+} block_section;
 
 
 typedef struct {
-    char name[256]; // TODO: constant, TODO: need this??
     uint32_t magic;
-    uint8_t major_ver;
-    uint8_t minor_ver;
+    uint8_t version;
 
     uint32_t block_size;
     uint64_t total_blocks;
