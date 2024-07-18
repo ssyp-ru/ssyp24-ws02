@@ -1,5 +1,4 @@
 #include "fs_command.h"
-
 #include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -8,20 +7,18 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-
 #define MAX_FILE_NUM 10
 #define MAX_FILE_SIZE 256
-
 typedef struct {
-    char path[256];
-    char data[MAX_FILE_SIZE];
-    int data_len;
-    struct stat stat;
+	char path[256];
+	char data[MAX_FILE_SIZE];
+	int data_len;
+	struct stat stat;
 } file;
-
 file files[MAX_FILE_NUM];
 int files_len = 0;
-
+int capacity=256;
+//char *vector=malloc;
 /** Get file attributes.
  *
  * Similar to stat().  The 'st_dev' and 'st_blksize' fields are
@@ -34,26 +31,28 @@ int files_len = 0;
  * may also be NULL if the file is open.
  */
 int do_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) {
-    printf("FUSE: do_getattr: %s\n", path);
-    (void)fi;
-    int res = 0;
-
-    memset(stbuf, 0, sizeof(struct stat));
-    if (strcmp(path, "/") == 0) {
-        stbuf->st_mode = S_IFDIR | 0755;
-        stbuf->st_nlink = 2;
-        //} else if (strcmp(path + 1, options.filename) == 0) {
-    } else {
-        stbuf->st_mode = S_IFREG | 0666;
-        stbuf->st_nlink = 1;
-        stbuf->st_size = 20;
-        stbuf->st_uid = 666;
-        stbuf->st_gid = 666;
-    }
-
-    return res;
+	printf("FUSE: do_getattr: %s\n", path);
+	(void)fi;
+	memset(stbuf, 0, sizeof(struct stat));
+	if (strcmp(path, "/") == 0) {
+		stbuf->st_mode = S_IFDIR | 0755;
+		stbuf->st_nlink = 2;
+		return 0;
+	} else{
+            for (int i = 0; i < files_len; i++) {
+			printf("%s %s\n", files[i].path, path);
+			if (strcmp(files[i].path, path) == 0) {
+				stbuf->st_mode = S_IFREG | 0666;
+				stbuf->st_nlink = 1;
+				stbuf->st_size = files[i].data_len;
+				stbuf->st_uid = 666;
+				stbuf->st_gid = 666;
+				return 0;
+			}
+		}
+	}
+	return -ENOENT;
 }
-
 /** Read directory
  *
  * The filesystem may choose between two modes of operation:
@@ -70,24 +69,18 @@ int do_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) 
  * '1'.
  */
 int do_readdir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi,
-               enum fuse_readdir_flags flags) {
-    printf("FUSE: do_readdir: %s\n", path);
+		enum fuse_readdir_flags flags) {
+	printf("FUSE: do_readdir: %s\n", path);
 
-    filler(buffer, ".", NULL, 0, 0);  // Current Directory
-    filler(buffer, "..", NULL, 0, 0); // Parent Directory
+	filler(buffer, ".", NULL, 0, 0);  // Current Directory
+	filler(buffer, "..", NULL, 0, 0); // Parent Directory
 
-    if (strcmp(path, "/") == 0) // If the user is trying to show the files/directories of the root
-                                // directory show the following
-    {
-        filler(buffer, "hello1", NULL, 0, 0);
-        filler(buffer, "hello2", NULL, 0, 0);
-    }
-    for (int i=0;i<files_len;i++){
-	    filler(buffer,files[i],NULL,0,0);
-	    printf("%s",files[i]);
-    }
+	for (int i=0;i<files_len;i++){
+		filler(buffer,files[i].path+1,NULL,0,0);
+		printf("%s",files[i].path+1);
+	}
 
-    return 0;
+	return 0;
 }
 
 /** Open a file
@@ -138,17 +131,17 @@ int do_readdir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t off
  *
  */
 int do_open(const char *path, struct fuse_file_info *fi) {
-    printf("FUSE: do_open=%s\n", path);
-    if (strcmp(path + 1, "hello1") != 0)
-        return -ENOENT;
-
-    if ((fi->flags & O_ACCMODE) != O_RDONLY)
-        return 0;
-    // return -EACCES;
-
-    return 0;
+	printf("FUSE: do_open=%s\n", path);
+	for (int i = 0; i < files_len; i++) {
+		if (strcmp(files[i].path, path) == 0) {
+			return 0;
+		}
+	}
+	if ((fi->flags & O_ACCMODE) != O_RDONLY){
+		return 0;
+	}
+	return -ENOENT;
 }
-
 /** Read data from an open file
  *
  * Read should return exactly the number of bytes requested except
@@ -159,24 +152,25 @@ int do_open(const char *path, struct fuse_file_info *fi) {
  * this operation.
  */
 int do_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-    printf("FUSE: do_read: path=%s buf_size=%ld offset=%ld\n", path, size, offset);
-    size_t len;
-    (void)fi;
-    if (strcmp(path + 1, "hello1") != 0)
-        return -ENOENT;
+	printf("FUSE: do_read: path=%s buf_size=%ld offset=%ld\n", path, size, offset);
+	size_t len;
+	(void)fi;
+	int i=0;
+	for(;strcmp(files[i].path,path+1)&&i<files_len;i++){}
+	if (strcmp(path + 1,files[i].path)!=0)
+		return -ENOENT;
 
-    char *data = "hi from fuse\n";
-    len = strlen(data);
-    if (offset < len) {
-        if (offset + size > len)
-            size = len - offset;
-        memcpy(buf, data + offset, size);
-    } else
-        size = 0;
+	char *data=files[i].data;
+	len=strlen(data);
+	if (offset<len) {
+		if (offset+size>len)
+			size=len-offset;
+		memcpy(buf,data+offset,size);
+	} else
+		size = 0;
 
-    return size;
+	return size;
 }
-
 /** Create a directory
  *
  * Note that the mode argument may not have the type specification
@@ -184,16 +178,14 @@ int do_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_
  * correct directory type bits use  mode|S_IFDIR
  * */
 int do_mkdir(const char *path, mode_t mode) {
-    printf("FUSE: do_mkdir, path=%s\n", path);
-    return 0;
+	printf("FUSE: do_mkdir, path=%s\n", path);
+	return 0;
 }
-
 /** Remove a directory */
 int do_rmdir(const char *path) {
-    printf("FUSE: do_rmdir, path=%s\n", path);
-    return 0;
+	printf("FUSE: do_rmdir, path=%s\n", path);
+	return 0;
 }
-
 /** Rename a file
  *
  * *flags* may be `RENAME_EXCHANGE` or `RENAME_NOREPLACE`. If
@@ -204,20 +196,18 @@ int do_rmdir(const char *path) {
  * exist and neither may be deleted.
  */
 int do_rename(const char *oldpath, const char *newpath, unsigned int flags) {
-    printf("FUSE: do_rename, oldpath=%s newpath=%s\n", oldpath, newpath);
-    return 0;
+	printf("FUSE: do_rename, oldpath=%s newpath=%s\n", oldpath, newpath);
+	return 0;
 }
-
 /** Change the permission bits of a file
  *
  * `fi` will always be NULL if the file is not currently open, but
  * may also be NULL if the file is open.
  */
 int do_chmod(const char *path, mode_t mode, struct fuse_file_info *fi) {
-    printf("FUSE: do_chmod, path=%s\n", path);
-    return 0;
-}
-
+	printf("FUSE: do_chmod, path=%s\n", path);
+	return 0;
+}	
 /** Change the owner and group of a file
  *
  * `fi` will always be NULL if the file is not currently open, but
@@ -227,10 +217,9 @@ int do_chmod(const char *path, mode_t mode, struct fuse_file_info *fi) {
  * expected to reset the setuid and setgid bits.
  */
 int do_chown(const char *path, uid_t uid, gid_t gid, struct fuse_file_info *fi) {
-    printf("FUSE: do_chown, path=%s\n", path);
-    return 0;
+	printf("FUSE: do_chown, path=%s\n", path);
+	return 0;
 }
-
 /** Change the size of a file
  *
  * `fi` will always be NULL if the file is not currently open, but
@@ -240,10 +229,9 @@ int do_chown(const char *path, uid_t uid, gid_t gid, struct fuse_file_info *fi) 
  * expected to reset the setuid and setgid bits.
  */
 int do_truncate(const char *path, off_t offset, struct fuse_file_info *fi) {
-    printf("FUSE: do_truncate, path=%s\n", path);
-    return 0;
+	printf("FUSE: do_truncate, path=%s\n", path);
+	return 0;
 }
-
 /** Write data to an open file
  *
  * Write should return exactly the number of bytes requested
@@ -254,19 +242,25 @@ int do_truncate(const char *path, off_t offset, struct fuse_file_info *fi) {
  * expected to reset the setuid and setgid bits.
  */
 int do_write(const char *path, const char *buffer, size_t buffer_size, off_t offset, struct fuse_file_info *fi) {
-    printf("FUSE: do_write, path=%s\n", path);
-    return buffer_size;
-}
+	printf("FUSE: do_write, path=%s\n", path);
+	if (buffer_size>=capacity){
+		capacity=capacity * 2;}
+	for (int j=0;j<=files_len;j++){
+		files[j].data_len+=buffer_size;
+		memcpy(files[j].data,buffer,buffer_size);
 
+		return buffer_size;
+	}
+	return 0;
+}
 /** Get file system statistics
  *
  * The 'f_favail', 'f_fsid' and 'f_flag' fields are ignored
  */
 int do_statfs(const char *path, struct statvfs *stat) {
-    printf("FUSE: do_statfs, path=%s\n", path);
-    return 0;
+	printf("FUSE: do_statfs, path=%s\n", path);
+	return 0;
 }
-
 /** Possibly flush cached data
  *
  * BIG NOTE: This is not equivalent to fsync().  It's not a
@@ -296,10 +290,9 @@ int do_statfs(const char *path, struct statvfs *stat) {
  * [close]: http://pubs.opengroup.org/onlinepubs/9699919799/functions/close.html
  */
 int do_flush(const char *path, struct fuse_file_info *fi) {
-    printf("FUSE: do_flush, path=%s\n", path);
-    return 0;
+	printf("FUSE: do_flush, path=%s\n", path);
+	return 0;
 }
-
 /** Release an open file
  *
  * Release is called when there are no more references to an open
@@ -313,37 +306,33 @@ int do_flush(const char *path, struct fuse_file_info *fi) {
  * file.  The return value of release is ignored.
  */
 int do_release(const char *path, struct fuse_file_info *fi) {
-    printf("FUSE: do_release, path=%s\n", path);
-    return 0;
+	printf("FUSE: do_release, path=%s\n", path);
+	return 0;
 }
-
 /** Synchronize file contents
  *
  * If the datasync parameter is non-zero, then only the user data
  * should be flushed, not the meta data.
  */
 int do_fsync(const char *path, int wtf, struct fuse_file_info *fi) {
-    printf("FUSE: do_fsync, path=%s\n", path);
-    return 0;
+	printf("FUSE: do_fsync, path=%s\n", path);
+	return 0;
 }
-
 /** Release directory
- */
+*/
 int do_releasedir(const char *path, struct fuse_file_info *fi) {
-    printf("FUSE: do_releasedir, path=%s\n", path);
-    return 0;
+	printf("FUSE: do_releasedir, path=%s\n", path);
+	return 0;
 }
-
 /** Synchronize directory contents
  *
  * If the datasync parameter is non-zero, then only the user data
  * should be flushed, not the meta data
  */
 int do_fsyncdir(const char *path, int wft, struct fuse_file_info *fi) {
-    printf("FUSE: do_fsyncdir, path=%s\n", path);
-    return 0;
+	printf("FUSE: do_fsyncdir, path=%s\n", path);
+	return 0;
 }
-
 /**
  * Initialize filesystem
  *
@@ -353,19 +342,17 @@ int do_fsyncdir(const char *path, int wft, struct fuse_file_info *fi) {
  * value provided to fuse_main() / fuse_new().
  */
 void *do_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
-    printf("FUSE: init\n");
-    return NULL;
+	printf("FUSE: init\n");
+	return NULL;
 }
-
 /**
  * Clean up filesystem
  *
  * Called on filesystem exit.
  */
 void do_destroy(void *private_data) {
-    printf("FUSE: do_destroy\n");
+	printf("FUSE: do_destroy\n");
 }
-
 /**
  * Create and open a file
  *
@@ -376,11 +363,20 @@ void do_destroy(void *private_data) {
  * versions earlier than 2.6.15, the mknod() and open() methods
  * will be called instead.
  */
-int do_create(const char *path, mode_t mode, struct fuse_file_info *fi) 
-    printf("FUSE: do_create, path=%s\n", path);
-    
-    
-    return 0;
+int do_create(const char *path, mode_t mode, struct fuse_file_info *fi){ 
+	printf("FUSE: do_create, path=%s\n", path);
+	struct stat hello_stat;
+	hello_stat.st_mode = S_IFREG | 0666;
+	hello_stat.st_nlink = 1;
+	hello_stat.st_size = 20;
+	hello_stat.st_uid = 666;
+	hello_stat.st_gid = 666;
+	strcpy(files[files_len].path, "/hello2");
+	files[files_len].stat = hello_stat;
+	files[files_len].data_len = 0;
+	files_len++;
+	printf("FUSE: do_create, path=%s\n", path);
+	return 0;
 }
 /**
  * Check file access permissions
@@ -392,22 +388,22 @@ int do_create(const char *path, mode_t mode, struct fuse_file_info *fi)
  * This method is not called under Linux kernel versions 2.4.x
  */
 int do_access(const char *path, int wtf) {
-    printf("FUSE: do_access, path=%s\n", path);
-    return 0;
+	printf("FUSE: do_access, path=%s\n", path);
+	return 0;
 }
-
 void init_fs() {
-    // initialize files with "hello1"
-    struct stat hello_stat;
-    hello_stat.st_mode = S_IFREG | 0666;
-    hello_stat.st_nlink = 1;
-    hello_stat.st_size = 20;
-    hello_stat.st_uid = 666;
-    hello_stat.st_gid = 666;
-    strcpy(files[files_len].path, "/hello1");
-    files[files_len].stat = hello_stat;
-    files[files_len].data_len = 0;
-    char *hello_data = "hello from fuse\n";
-    files[files_len].data_len = strlen(hello_data);
-    files_len++;
+	// initialize files with "hello1"
+	struct stat hello_stat;
+	hello_stat.st_mode = S_IFREG | 0666;
+	hello_stat.st_nlink = 1;
+	hello_stat.st_size = 20;
+	hello_stat.st_uid = 666;
+	hello_stat.st_gid = 666;
+	strcpy(files[files_len].path, "/hello1");
+	files[files_len].stat = hello_stat;
+	files[files_len].data_len = 0;
+	char *hello_data = "hello from fuse\n";
+	files[files_len].data_len = strlen(hello_data);
+	files_len++;
 }
+char a[256];
