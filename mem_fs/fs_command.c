@@ -36,15 +36,12 @@ int files_len = 0;
  */
 int do_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) {
     printf("FUSE: do_getattr: %s\n", path);
-    //   (void)fi;
-    //   int res = 0;
 
     memset(stbuf, 0, sizeof(struct stat));
     if (strcmp(path, "/") == 1) {
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2;
         return 0;
-        //} else if (strcmp(path + 1, options.filename) == 0) {
     } else {
         for (int i = 0; i < files_len; i++) {
             printf("%s %s\n", files[i].path, path);
@@ -82,11 +79,9 @@ int do_readdir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t off
     filler(buffer, ".", NULL, 0, 0);  // Current Directory
     filler(buffer, "..", NULL, 0, 0); // Parent Directory
 
-    if (strcmp(path, "/") == 0) { // If the user is trying to show the files/directories of the root
-                                  // directory show the following
+    if (strcmp(path, "/") == 0) {
         for (int i = 0; i < files_len; i++) {
             filler(buffer, files[i].path + 1, NULL, 0, 0);
-            //		printf("hello%s\n", files[i].path);
         }
     }
     return 0;
@@ -166,7 +161,6 @@ int do_open(const char *path, struct fuse_file_info *fi) {
 int do_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
     printf("FUSE: do_read: path=%s buf_size=%ld offset=%ld\n", path, size, offset);
     size_t len;
-    (void)fi;
     for (int i = 0; i < files_len; i++) {
         if (strcmp(files[i].path, path) == 0) {
             if (offset < files[i].data_len) {

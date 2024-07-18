@@ -3,8 +3,8 @@ build: mem_fs test
 CFLAGS=-Werror -Wall -pedantic `pkg-config fuse3 --cflags`
 LFLAGS=`pkg-config fuse3 --libs`
 
-SRC=fs_command.c
-HDR=fs_command.h
+SRC=fs_command.c write_test.c
+HDR=fs_command.h write_test.h
 OBJ=$(SRC:.c=.o)
 
 mem_fs: $(OBJ) $(HDR) main.o
