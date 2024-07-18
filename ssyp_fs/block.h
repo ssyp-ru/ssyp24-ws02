@@ -22,7 +22,10 @@ typedef struct {
     uint64_t total_blocks;
     uint64_t used_blocks;
 
-    inode root_dir;
+    // inode root_dir; (???????????????????)
+    
+    uint64_t root_dir_block_id;
+    
     uint64_t first_journal_block;
     uint64_t total_journal_blocks;
 

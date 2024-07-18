@@ -2,6 +2,8 @@
 #define INODE_H_
 
 #include <stdint.h>
+#include "block.h"
+#define INODE_MAGIC 0x123456
 
 enum inode_type{
     INODE_TYPE_DIRECTORY = 0,
@@ -32,6 +34,9 @@ typedef struct {
     // data
     uint8_t data_type; // 0 - inode short form, 1 - file data blocks
     uint32_t data_elems;
+    // One of them will be NULL (depending of inode type (dir/reg)):
+    inode_directory_short_form_t* dir_blocks;
+    block_section* file_block;
     // and now we have 'data_elems' elements of types depending on 'data_type'
 } inode;
 

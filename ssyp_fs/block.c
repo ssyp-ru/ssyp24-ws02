@@ -27,7 +27,8 @@ void super_block_to_bytes(super_block super_block, char *bytes) {
     int_to_bytes64(super_block.first_bitmap_blocks, bytes + 48);
     int_to_bytes(super_block.total_bitmap_blocks, bytes + 56);
     bytes[60] = (char)(super_block.version);
-    inode_to_bytes(super_block.root_dir, bytes + 61);
+    int_to_bytes64(super_block.root_dir_block_id, bytes+61);
+    //inode_to_bytes(super_block.root_dir, bytes + 61);
 }
 
 void bytes_to_inode(char *bytes, inode *inode) {
@@ -55,7 +56,8 @@ void bytes_to_super_block(char *bytes, super_block *super_block) {
     super_block->first_bitmap_blocks = bytes_to_int64(bytes + 48);
     super_block->total_bitmap_blocks = bytes_to_int64(bytes + 56);
     super_block->version = bytes[60];
-    bytes_to_inode(bytes + 61, &(super_block->root_dir));
+    super_block->root_dir_block_id = bytes_to_int64(bytes+61);
+    //bytes_to_inode(bytes + 61, &(super_block->root_dir));
 }
 
 // struct super_block bytes_to_super_block(char* bytes) {
