@@ -6,14 +6,14 @@ bool map_[SIZE];
 
 
 
-block_sect allocate_blocks(fs *fs, int num) {
-   	block_sect b;
+block_section allocate_blocks(fs *fs, int num) {
+   	block_section b;
   	b.len = num;
         int n = 0;
 	fs->super_block->used_blocks += num;//total_bitmap_blocks
         if(fs->super_block->total_bitmap_blocks == 0){
                 b.start = 0;
-                map_[i] = 0;
+                
                 return b;
                 }
         for(int i = 0;i < fs->super_block->total_bitmap_blocks;i++){
@@ -29,11 +29,9 @@ block_sect allocate_blocks(fs *fs, int num) {
 }
 
 
-void deallocate_blocks(start, int num) {
+void deallocate_blocks(fs *fs,int start, int num) {
 	fs->super_block->used_blocks -= num;//total_bitmap_blocks
         for(int i = 0;i < num;i++){
-                map_[i+num] = 0;
-                
-    
-    	return b;
+                map_[num+i] = 0;//i+ num
+                }
 }
