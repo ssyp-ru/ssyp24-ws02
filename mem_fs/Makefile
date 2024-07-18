@@ -1,16 +1,29 @@
-build: mem_fs
+build: mem_fs test
 
-CFLAGS=-Werror -Wall -pedantic `pkg-config fuse3 --cflags --libs`
+CFLAGS=-Werror -Wall -pedantic `pkg-config fuse3 --cflags`
+LFLAGS=`pkg-config fuse3 --libs`
 
-mem_fs: main.c fs_command.o
-	gcc main.c fs_command.o -o mem_fs $(CFLAGS) 
+SRC=fs_command.c
+HDR=fs_command.h
+OBJ=$(SRC:.c=.o)
 
-fs_command.o: fs_command.c fs_command.h
-	gcc -c fs_command.c $(CFLAGS) 
+mem_fs: $(OBJ) $(HDR) main.o
+	gcc $(OBJ) main.o -o mem_fs $(LFLAGS) 
+
+test: $(OBJ) $(HDR) main_test.o
+	gcc $(OBJ) main_test.o -o test
+
+%.o : %.c
+	gcc -c $(CFLAGS) $< -o $@
 
 run: mem_fs
 	./mem_fs -f mount
 
+run_test: test
+	./test
+
 clean:
 	rm -f *.o
 	rm -f mem_fs
+	rm -f test
+
