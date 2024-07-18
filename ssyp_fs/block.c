@@ -3,7 +3,7 @@
 #include "utils.h"
 #include "block.h"
 
-void inode_to_bytes(struct inode_t inode, char* bytes) {
+void inode_to_bytes(inode inode, char* bytes) {
 	int_to_bytes(inode.magic, bytes);
 	int_to_bytes64(inode.inode_id, bytes+4);
 	int_to_bytes(inode.uid, bytes+12);
@@ -17,7 +17,7 @@ void inode_to_bytes(struct inode_t inode, char* bytes) {
 	bytes[45] = (char)(inode.data_type);
 	int_to_bytes(inode.data_elems, bytes+46);
 }
-void super_block_to_bytes(struct super_block super_block, char* bytes) {
+void super_block_to_bytes(super_block super_block, char* bytes) {
 	int_to_bytes(super_block.magic, bytes);
 	int_to_bytes(super_block.block_size, bytes+4);
 	int_to_bytes64(super_block.total_blocks, bytes+8);
@@ -30,22 +30,22 @@ void super_block_to_bytes(struct super_block super_block, char* bytes) {
 	inode_to_bytes(super_block.root_dir, bytes+61);
 }
 
-void bytes_to_inode(char* bytes, struct inode_t* inode) {
+void bytes_to_inode(char* bytes, inode* inode) {
 	inode->magic = bytes_to_int(bytes);
 	inode->inode_id = bytes_to_int(bytes+4);
-	inode->uid = bytes_to_int64(bytes+12);
+	inode->uid = bytes_to_int(bytes+12);
 	inode->gid = bytes_to_int(bytes+16);
 	inode->flags = bytes_to_int(bytes+20);
 	inode->atime = bytes_to_int(bytes+24);
 	inode->mtime = bytes_to_int(bytes+28);
 	inode->ctime = bytes_to_int(bytes+32);
-	inode.file_size = bytes_to_int64(bytes+36);
-	inode.type = bytes[44];
-	inode.data_type = bytes[45];
-	inode.data_elems = bytes_to_int(bytes+46);
+	inode->file_size = bytes_to_int64(bytes+36);
+	inode->type = bytes[44];
+	inode->data_type = bytes[45];
+	inode->data_elems = bytes_to_int(bytes+46);
 }
 
-void bytes_to_super_block(char* bytes, struct super_block* super_block) {
+void bytes_to_super_block(char* bytes, super_block* super_block) {
 	super_block->magic = bytes_to_int(bytes);
 	super_block->block_size = bytes_to_int(bytes+4);
 	super_block->total_blocks = bytes_to_int64(bytes+8);
@@ -54,8 +54,8 @@ void bytes_to_super_block(char* bytes, struct super_block* super_block) {
 	super_block->total_journal_blocks = bytes_to_int64(bytes+32);
 	super_block->first_bitmap_blocks = bytes_to_int64(bytes+48);
 	super_block->total_bitmap_blocks = bytes_to_int64(bytes+56);
-	super_block->super_block.version = bytes[60];
-	bytes_to_inode(bytes+61, &(super_block->inode))
+	super_block->version = bytes[60];
+	bytes_to_inode(bytes+61, &(super_block->root_dir));
 }
 
 //struct super_block bytes_to_super_block(char* bytes) {
