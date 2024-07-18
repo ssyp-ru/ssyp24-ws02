@@ -1,6 +1,6 @@
 build: mem_fs
 
-CFLAGS=-Werror -Wall -pedantic `pkg-config fuse3 --cflags --libs`
+CFLAGS=-Werror -Wall -pedantic `pkg-config fuse3 --cflags --libs` -g
 
 mem_fs: main.c fs_command.o
 	gcc main.c fs_command.o -o mem_fs $(CFLAGS) 

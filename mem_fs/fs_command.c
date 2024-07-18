@@ -35,23 +35,25 @@ int files_len = 0;
  */
 int do_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) {
     printf("FUSE: do_getattr: %s\n", path);
-    (void)fi;
-    int res = 0;
-
     memset(stbuf, 0, sizeof(struct stat));
     if (strcmp(path, "/") == 0) {
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2;
+	return 0;
         //} else if (strcmp(path + 1, options.filename) == 0) {
     } else {
-        stbuf->st_mode = S_IFREG | 0666;
-        stbuf->st_nlink = 1;
-        stbuf->st_size = 20;
-        stbuf->st_uid = 666;
-        stbuf->st_gid = 666;
     }
-
-    return res;
+    for(int i = 0; i <= files_len; i++) {
+        if (strcmp(files[i].path, path) == 0) {
+		stbuf->st_mode = S_IFREG | 0666;
+		stbuf->st_nlink = 1;
+		stbuf->st_size = files[i].data_len;
+		stbuf->st_uid = 666;
+		stbuf->st_gid = 666;
+	    return 0;
+	}
+    }
+    return -ENOENT;
 }
 
 /** Read directory
@@ -137,9 +139,15 @@ int do_readdir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t off
  */
 int do_open(const char *path, struct fuse_file_info *fi) {
     printf("FUSE: do_open=%s\n", path);
-    if (strcmp(path + 1, "hello1") != 0)
-        return -ENOENT;
-
+    int i = 0;
+    for(; i <= files_len; i++) {
+    	if (strcmp(path, files[i].path) == 0) {
+	    break;
+	}
+    }
+    if (i > files_len) {
+    	return -ENOENT;
+    }
     if ((fi->flags & O_ACCMODE) != O_RDONLY)
         return 0;
     // return -EACCES;
@@ -158,21 +166,18 @@ int do_open(const char *path, struct fuse_file_info *fi) {
  */
 int do_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
     printf("FUSE: do_read: path=%s buf_size=%ld offset=%ld\n", path, size, offset);
-    size_t len;
-    (void)fi;
-    if (strcmp(path + 1, "hello1") != 0)
-        return -ENOENT;
-
-    char *data = "hi from fuse\n";
-    len = strlen(data);
-    if (offset < len) {
-        if (offset + size > len)
-            size = len - offset;
-        memcpy(buf, data + offset, size);
-    } else
-        size = 0;
-
-    return size;
+    int i = 0;
+    for(; i <= files_len; i++) {
+    	if (strcmp(path, files[i].path) == 0) {
+	    break;
+	}
+    }
+    if(i > files_len) {
+	printf("- ENOENT");
+    	return -ENOENT;
+    }
+    memcpy(buf, files[i].data, files[i].data_len);
+    return files[i].data_len;
 }
 
 /** Create a directory
@@ -252,7 +257,20 @@ int do_truncate(const char *path, off_t offset, struct fuse_file_info *fi) {
  * expected to reset the setuid and setgid bits.
  */
 int do_write(const char *path, const char *buffer, size_t buffer_size, off_t offset, struct fuse_file_info *fi) {
-    printf("FUSE: do_write, path=%s\n", path);
+    printf("FUSE: do_write, path=%s, offset=%ld\n", path, offset);
+    int i = 0;
+    for(; i <= files_len; i++) {
+        if (strcmp(files[i].path, path) == 0) {
+	    break;
+	}
+    }
+    if (i > buffer_size) {
+    	return -ENOENT;
+    }
+    for(int j = 0; j < buffer_size; j ++) {
+    	files[i].data[j + offset] = buffer[j];
+	files[i].data_len ++;
+    }
     return buffer_size;
 }
 
@@ -376,7 +394,18 @@ void do_destroy(void *private_data) {
  */
 int do_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
     printf("FUSE: do_create, path=%s\n", path);
+    strcpy(files[files_len].path, path);
+    struct stat hello_stat;
+    files_len ++;
+    hello_stat.st_mode = S_IFREG | 0666;
+    hello_stat.st_nlink = 1;
+    hello_stat.st_size = 20;
+    hello_stat.st_uid = 666;
+    hello_stat.st_gid = 666;
+    files[files_len].stat = hello_stat;
+    files[files_len].data_len = 0;
     return 0;
+
 }
 /**
  * Check file access permissions
