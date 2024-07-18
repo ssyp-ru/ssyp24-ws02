@@ -56,7 +56,7 @@ void bytes_to_super_block(char* bytes, struct super_block* super_block) {
 	super_block->total_bitmap_blocks = bytes_to_int64(bytes+56);
 	super_block->super_block.version = bytes[60];
 	bytes_to_inode(bytes+61, &(super_block->inode))
-};
+}
 
 //struct super_block bytes_to_super_block(char* bytes) {
 	// TODO
