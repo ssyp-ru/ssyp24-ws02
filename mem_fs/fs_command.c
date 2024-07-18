@@ -16,10 +16,11 @@ typedef struct {
     char path[256];
     char data[MAX_FILE_SIZE];
     int data_len;
+    int is_directory;
     struct stat stat;
-} file;
+} inode;
 
-file files[MAX_FILE_NUM];
+inode files[MAX_FILE_NUM];
 int files_len = 0;
 
 /** Get file attributes.
@@ -35,23 +36,30 @@ int files_len = 0;
  */
 int do_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) {
     printf("FUSE: do_getattr: %s\n", path);
-    (void)fi;
-    int res = 0;
+ //   (void)fi;
+ //   int res = 0;
 
     memset(stbuf, 0, sizeof(struct stat));
-    if (strcmp(path, "/") == 0) {
+    if (strcmp(path, "/") == 1) {
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2;
+	return 0;
         //} else if (strcmp(path + 1, options.filename) == 0) {
     } else {
-        stbuf->st_mode = S_IFREG | 0666;
-        stbuf->st_nlink = 1;
-        stbuf->st_size = 20;
-        stbuf->st_uid = 666;
-        stbuf->st_gid = 666;
+	for (int i = 0; i < files_len; i++) {
+		printf("%s %s\n", files [i].path, path);
+		if (strcmp(files[i].path, path) == 0) {		
+     		    stbuf->st_mode = S_IFREG | 0666;
+                    stbuf->st_nlink = 1;
+                    stbuf->st_size = files[i].data_len;
+                    stbuf->st_uid = 666;
+                    stbuf->st_gid = 666;
+		    return 0;
+		}
+	}
     }
 
-    return res;
+    return -ENOENT;
 }
 
 /** Read directory
@@ -70,22 +78,17 @@ int do_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) 
 int do_readdir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi,
                enum fuse_readdir_flags flags) {
     printf("FUSE: do_readdir: %s\n", path);
-    
-   for (int i = 0; i < files_len; i++) {
-	filler(buffer, ".", NULL, 0, 0);
-   	printf("%s", files[i]);
-   }
-	
+
     filler(buffer, ".", NULL, 0, 0);  // Current Directory
     filler(buffer, "..", NULL, 0, 0); // Parent Directory
 
-    if (strcmp(path, "/") == 0) // If the user is trying to show the files/directories of the root
-                                // directory show the following
-    {
-        filler(buffer, "hello1", NULL, 0, 0);
-        filler(buffer, "hello2", NULL, 0, 0);
+    if (strcmp(path, "/") == 0) { // If the user is trying to show the files/directories of the root
+                                  // directory show the following     
+   	 for (int i = 0; i < files_len; i++) {
+		filler(buffer, files[i].path + 1, NULL, 0, 0);
+	   //		printf("hello%s\n", files[i].path);
+         } 
     }
-
     return 0;
 }
 
@@ -138,14 +141,17 @@ int do_readdir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t off
  */
 int do_open(const char *path, struct fuse_file_info *fi) {
     printf("FUSE: do_open=%s\n", path);
-    if (strcmp(path + 1, "hello1") != 0)
-        return -ENOENT;
-
-    if ((fi->flags & O_ACCMODE) != O_RDONLY)
+    for (int i = 0; i < files_len; i++) {
+   	 if (strcmp(files[i].path, path) == 0) {
+       		 return 0;
+	 }
+    }
+    if ((fi->flags & O_ACCMODE) != O_RDONLY) {
         return 0;
+    }
     // return -EACCES;
 
-    return 0;
+    return -ENOENT;
 }
 
 /** Read data from an open file
@@ -161,8 +167,20 @@ int do_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_
     printf("FUSE: do_read: path=%s buf_size=%ld offset=%ld\n", path, size, offset);
     size_t len;
     (void)fi;
-    if (strcmp(path + 1, "hello1") != 0)
-        return -ENOENT;
+    for (int i = 0; i < files_len; i++) {
+    	if (strcmp(files[i].path, path) == 0) {
+	if (offset < files[i].data_len) {
+		if (offset + size > files[i].data_len)
+		size = files[i].data_len - offset;
+		memcpy(buf, files[i].data + offset, size);
+	} else {
+		size = 0;
+		printf("%s %ld\n", buf, size);
+		return size;
+	}
+	}
+	return -ENOENT;
+    }
 
     char *data = "hi from fuse\n";
     len = strlen(data);
@@ -183,7 +201,18 @@ int do_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_
  * correct directory type bits use  mode|S_IFDIR
  * */
 int do_mkdir(const char *path, mode_t mode) {
-    printf("FUSE: do_mkdir, path=%s\n", path);
+    for (int i = 0; i < files_len; i++) {
+         if (strcmp(files[i].path, path) == 0) {
+         if (mkdir(path, mode) != -1) {
+                
+         } else {
+                return -ENOENT;
+         }
+         } else {
+        	return -ENOENT;
+         }
+    }
+   // printf("FUSE: do_mkdir, path=%s\n", path);
     return 0;
 }
 
@@ -253,9 +282,19 @@ int do_truncate(const char *path, off_t offset, struct fuse_file_info *fi) {
  * expected to reset the setuid and setgid bits.
  */
 int do_write(const char *path, const char *buffer, size_t buffer_size, off_t offset, struct fuse_file_info *fi) {
-    
-    printf("FUSE: do_write, path=%s\n", path);
-    return buffer_size;
+    printf("FUSE: do_write, path=%s, offset=%ld\n", path, offset);
+    for (int i = 0; i < files_len; i++) {
+       if (strcmp(files[i].path, path) == 0) {
+                files[i].data_len +=buffer_size;
+		printf("%c %c %c %c\n", files[i].data[4], files[i].data[5], files[i].data[6], files[i].data[7]);
+		memcpy(files[i].data + offset, buffer, buffer_size);	
+		printf("%c %c %c %c\n", files[i].data[4], files[i].data[5], files[i].data[6], files[i].data[7]);
+                printf("%s\n---\n%s %ld %d\n", files[i].data, buffer, buffer_size, files[i].data_len);
+       }
+    }
+    return -ENOENT;
+ //   printf("FUSE: do_write, path=%s\n", path);
+  //  return buffer_size;
 }
 
 /** Get file system statistics
@@ -384,12 +423,9 @@ int do_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
     hello_stat.st_size = 20;
     hello_stat.st_uid = 666;
     hello_stat.st_gid = 666;
-    strcpy(files[files_len].path, "/hello1");
+    strcpy(files[files_len].path, path);
     files[files_len].stat = hello_stat;
     files[files_len].data_len = 0;
-    char *hello_data = "hello from fuse\n";
-    files[files_len].data_len = strlen(hello_data);
-    memcpy(files[files_len].data, hello_data, files[files_len].data_len);
     files_len++;
     return 0;
 }
