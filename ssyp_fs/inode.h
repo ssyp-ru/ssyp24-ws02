@@ -33,7 +33,7 @@ typedef struct {
     uint8_t data_type; // 0 - inode short form, 1 - file data blocks
     uint32_t data_elems;
     // and now we have 'data_elems' elements of types depending on 'data_type'
-} inode_t;
+} inode;
 
 
 #endif

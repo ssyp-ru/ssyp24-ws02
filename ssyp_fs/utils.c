@@ -9,7 +9,7 @@ void int_to_bytes(int32_t data, char *bytes) {
 	bytes[3] = (char)(data >> 24);
 }
 
-void int_to_bytes64 (int64_t data, char* bytes) {
+void int_to_bytes64(int64_t data, char* bytes) {
 	bytes[0] = (char)data;
     bytes[1] = (char)(data >> 8);
     bytes[2] = (char)(data >> 16);
@@ -32,7 +32,7 @@ int64_t bytes_to_int64(char *bytes) {
 void int_to_bytes_test() {
 	char bytes[8];
 	int32_t value32 = 0x12345678;
-	int64_t value64 = 0x123456789abcdef;
+	//int64_t value64 = 0x123456789abcdef;
 
 	int_to_bytes(value32, bytes);
 	int32_t res32 = bytes_to_int(bytes);
