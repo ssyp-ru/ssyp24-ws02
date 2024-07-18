@@ -9,8 +9,8 @@
 #include <time.h>
 #include <unistd.h>
 
-#define MAX_FILE_NUM 10
-#define MAX_FILE_SIZE 256
+#define MAX_FILE_NUM 50
+#define MAX_FILE_SIZE 2560
 
 typedef struct {
     char path[256];
@@ -22,42 +22,34 @@ typedef struct {
 file files[MAX_FILE_NUM];
 int files_len = 0;
 
-/** Get file attributes.
- *
- * Similar to stat().  The 'st_dev' and 'st_blksize' fields are
- * ignored. The 'st_ino' field is ignored except if the 'use_ino'
- * mount option is given. In that case it is passed to userspace,
- * but libfuse and the kernel will still assign a different
- * inode for internal use (called the "nodeid").
- *
- * `fi` will always be NULL if the file is not currently open, but
- * may also be NULL if the file is open.
- */
 int do_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) {
     //return -ENOENT;
     printf("FUSE: do_getattr: %s\n", path);
     (void)fi;
     int res = 0;
-    int i = 0;
-    for(;strcmp(files[i].path, path) != 0 && i<MAX_FILE_NUM;i++){
-    }
-    if(strcmp(files[i].path, path) != 0){
-    	return -ENOENT;
-    }
     memset(stbuf, 0, sizeof(struct stat));
-    if (strcmp(path, "/") == 0) {
-        stbuf->st_mode = S_IFDIR | 0755;
-        stbuf->st_nlink = 2;
-        //} else if (strcmp(path + 1, options.filename) == 0) {
-    } else {
-        stbuf->st_mode = S_IFREG | 0666;
-        stbuf->st_nlink = 1;
-        stbuf->st_size = 20;
-        stbuf->st_uid = 666;
-        stbuf->st_gid = 666;
+    if(strcmp(path, "/") == 0){
+	stbuf->st_mode = S_IFDIR | 0777;
+  	stbuf->st_nlink = 2;
+   	return res;
+
+    }
+    else{
+	for(int i = 0;i < files_len;i++){
+    
+    		if(strcmp(files[i].path, path) == 0){
+			stbuf->st_mode = S_IFREG | 0666;
+			stbuf->st_nlink = 1;
+			stbuf->st_size = files[i].data_len;
+			printf("LEN = %d, PATH = %s \n", files[i].data_len, files[i].path);
+			stbuf->st_uid = 666;
+			stbuf->st_gid = 666;
+	    		return res;	
+		}
+	}
     }
 
-    return res;
+    return -ENOENT;
 }
 
 /** Read directory
@@ -79,21 +71,21 @@ int do_readdir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t off
                enum fuse_readdir_flags flags) {
     printf("FUSE: do_readdir: %s\n", path);
 
-//    filler(buffer, ".", NULL, 0, 0);  // Current Directory
-//    filler(buffer, "..", NULL, 0, 0); // Parent Directory
+    filler(buffer, ".", NULL, 0, 0);  // Current Directory
+    filler(buffer, "..", NULL, 0, 0); // Parent Directory
 
     if (strcmp(path, "/") == 0) // If the user is trying to show the files/directories of the root
                                 // directory show the following
     {	
-	for(int i = 0;i < MAX_FILE_NUM;i++){
-        	filler(buffer, files[i].path, NULL, 0, 0);
+	for(int i = 0;i < files_len;i++){
+        	filler(buffer, files[i].path+1, NULL, 0, 0);
 	}
     }
 
     return 0;
 }
 
-/** Open a file
+/** Open  file
  *
  * Open flags are available in fi->flags. The following rules
  * apply.
@@ -142,16 +134,17 @@ int do_readdir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t off
  */
 int do_open(const char *path, struct fuse_file_info *fi) {
     printf("FUSE: do_open=%s\n", path);
-    int i = 0;
-    for(;strcmp(files[i].path,path+1) && i < files_len;i++){}
-    if (strcmp(path + 1, files[i].path) != 0)
-        return -ENOENT;
-
+    
+    for(int i = 0;i < files_len;i++){
+	    if (strcmp(path, files[i].path) == 0){
+		    return 0;
+	    }
+    }
     if ((fi->flags & O_ACCMODE) != O_RDONLY)
-       // return 0;
-        return -EACCES;
+        return 0;
+       // return -EACCES;
 
-    return 0;
+    return -ENOENT;
 }
 
 /** Read data from an open file
@@ -164,24 +157,21 @@ int do_open(const char *path, struct fuse_file_info *fi) {
  * this operation.
  */
 int do_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-    printf("FUSE: do_read: path=%s buf_size=%ld offset=%ld\n", path, size, offset);
-    size_t len;
-    (void)fi;
-    int i = 0;
-    for(;strcmp(files[i].path,path+1) && i < files_len;i++){}
-    if (strcmp(path+1, files[i].path) != 0)
-        return -ENOENT;
-
-    char *data = files[i].data;
-    len = strlen(data);
-    if (offset < len) {
-        if (offset + size > len)
-            size = len - offset;
-        memcpy(buf, data + offset, size);
-    } else
-        size = 0;
-
-    return size;
+    printf("FUSE: do_read:buf_size=%ld offset=%ld \n", size, offset);
+ //   size_t len;
+    
+    for(int i = 0;i < files_len;i++){
+    	if (strcmp(path, files[i].path) == 0){
+		printf("path = %s,filepath = %s \n", files[i].path, path);
+		if(offset+size > files[i].data_len){size = files[i].data_len - offset;}
+		printf("%s, %s \n",path, files[i].path); 
+		memcpy(buf,files[i].data ,size);
+		printf("buf = %s \n", buf);
+		return size;
+	}
+}
+    
+    return -ENOENT;
 }
 
 /** Create a directory
@@ -269,10 +259,19 @@ int do_truncate(const char *path, off_t offset, struct fuse_file_info *fi) {
  * expected to reset the setuid and setgid bits.
  */
 int do_write(const char *path, const char *buffer, size_t buffer_size, off_t offset, struct fuse_file_info *fi) {
-    printf("FUSE: do_write, path=%s\n", path);
-    files[files_len].data_len = strlen(buffer);
-    memcpy(files[files_len].data, buffer, files[files_len].data_len);
-    return buffer_size;
+    printf("FUSE: do_write, path=%s, size=%ld, offset=%ld, files_len = %d \n", path,buffer_size, offset, files_len);
+    for(int i = 0;i<files_len;i++){
+	    if(strcmp(files[i].path, path) == 0){
+		if(offset >= files[i].data_len){files[i].data_len+=buffer_size;}
+    		
+
+		printf("path = %s,filepath = %s ,size = %ld \n", files[i].path, path, buffer_size);
+		printf("LEN IN WRITE = %d, PATH = %s \n",files[i].data_len, files[i].path);
+		memcpy(files[i].data+offset, buffer, buffer_size);
+		return buffer_size;
+	    }
+}
+    return -ENOENT;
 }
 
 /** Get file system statistics
@@ -397,7 +396,7 @@ int do_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
      	 struct stat hello_stat;
      	 hello_stat.st_mode = S_IFREG | 0666;
     	 hello_stat.st_nlink = 1;
-    	 hello_stat.st_size = 20;
+    	 hello_stat.st_size = 100;
     	 hello_stat.st_uid = 666;
     	 hello_stat.st_gid = 666;
     	 strcpy(files[files_len].path, path);
