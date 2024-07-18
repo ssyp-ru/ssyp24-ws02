@@ -15,6 +15,9 @@ ssyp_fs: $(OBJ)
 run: ssyp_fs
 	./ssyp_fs -f mount
 
+test: utils.c test/main_test.c
+	gcc utils.c test/main_test.c -o test/test
+
 clean:
 	rm -f *.o
 	rm -f ssyp_fs
