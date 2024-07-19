@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define BYTE_RANGE 256;
 
@@ -105,26 +106,23 @@ void write_tga(char *filename, int width, int height, int channels, uint8_t *dat
 #define width 100
 #define height 100
 
+void set_pixel(uint8_t *data, int x, int y, int r, int g, int b, int image_width) {
+    int index = (x * image_width + y) * 3;
+    data[index] = b;
+    data[index + 1] = g;
+    data[index + 2] = r;
+}
+
 int main() {
-    uint8_t data[width * height * 3];
-    for (int i = 0; i < width * height; i++) {
-	   for (int j =0; j <width; j++);{
-       	data[((i * width + j)* 3)] = 255;
-       	data[((i * width + j)* 3) + 1] = 0;
-	data[((i * width + j)* 3) + 2] = 0;
-    }
+    int width = 500;
+    int height = 300;
+    uint8_t *data = malloc(width * height * 3);
+    for (int x = 0; x < height; x++) {
+        for (int y = 0; y < width; y++) {
+            set_pixel(data, x, y, 100, 0, 255, width);
+        }
     }
 
-	for (int i = 0; i < width; i++) {
-		   for (int j = 0; j < width; j++);{
-		   
-
-        		data[((i * width + j)* 3)] = 255;
-        		data[((i * width + j)* 3) + 1] = 255;
-        		data[((i * width + j)* 3) + 2] = 255;
-	
-         	}
-		}
     write_tga("test.tga", width, height, 3, data);
     return 0;
 }
