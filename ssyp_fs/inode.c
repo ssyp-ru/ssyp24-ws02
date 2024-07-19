@@ -1,5 +1,5 @@
-#include "utils.h"
 #include "inode.h"
+#include "utils.h"
 
 void inode_to_bytes(inode_t *inode, char *bytes) {
     int_to_bytes(inode->magic, bytes);
@@ -30,4 +30,3 @@ void bytes_to_inode(char *bytes, inode_t *inode) {
     inode->data_type = bytes[45];
     inode->data_elems = bytes_to_int(bytes + 46);
 }
-
