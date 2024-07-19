@@ -1,10 +1,10 @@
 build: ssyp_fs test
 
-CFLAGS=-Werror -Wall -pedantic `pkg-config fuse3 --cflags`
+CFLAGS=-Werror -Wall -pedantic `pkg-config fuse3 --cflags` -g
 LFLAGS=`pkg-config fuse3 --libs`
 
-SRC=allocator.c block.c block_device.c fs_command.c utils.c
-HDR=allocator.h block.h block_device.h fs_command.h utils.h
+SRC=allocator.c block_device.c fs_command.c utils.c fs.c inode.c super_block.c
+HDR=allocator.h block_device.h fs_command.h utils.h fs.h inode.h super_block.h
 OBJ=$(SRC:.c=.o)
 
 ssyp_fs: $(OBJ) $(HDR) main.o
@@ -13,7 +13,7 @@ ssyp_fs: $(OBJ) $(HDR) main.o
 test: $(OBJ) $(HDR) main_test.o
 	gcc $(OBJ) main_test.o -o test
 
-%.o : %.c
+%.o : %.c $(HDR)
 	gcc -c $(CFLAGS) $< -o $@
 
 run: ssyp_fs
