@@ -1,6 +1,6 @@
-#include "fs_command.h"
 #include "block_device.h"
 #include "fs.h"
+#include "fs_command.h"
 #include <stdio.h>
 
 static struct fuse_operations operations = {

@@ -223,4 +223,3 @@ int do_access(const char *path, int wtf) {
     printf("FUSE: do_access, path=%s\n", path);
     return 0;
 }
-

@@ -1,8 +1,8 @@
+#include <assert.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <assert.h>
 
 #include "block_device.h"
 
@@ -28,7 +28,7 @@ void set_blocks(block_device_t *dev, int from_block_id, int num, char *bytes) {
     assert(size == num * DEVICE_BLOCK_SIZE);
 }
 
-int is_exist(char* path) {
+int is_exist(char *path) {
     struct stat s;
     return stat(path, &s) == 0;
 }
