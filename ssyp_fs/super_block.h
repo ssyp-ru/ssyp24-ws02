@@ -3,7 +3,7 @@
 
 #include "inode.h"
 
-#define SUPER_BLOCK_MAGIC 0x53535950
+#define SUPER_BLOCK_MAGIC 0x50595353
 #define CURRENT_VERSION 1
 
 typedef struct {

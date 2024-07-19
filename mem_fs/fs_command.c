@@ -437,19 +437,3 @@ int do_access(const char *path, int wtf) {
     return 0;
 }
 
-void init_fs() {
-    // initialize files with "hello1"
-    struct stat hello_stat;
-    hello_stat.st_mode = S_IFREG | 0666;
-    hello_stat.st_nlink = 1;
-    hello_stat.st_size = 20;
-    hello_stat.st_uid = 666;
-    hello_stat.st_gid = 666;
-    strcpy(files[files_len].path, "/hello1");
-    files[files_len].stat = hello_stat;
-    files[files_len].data_len = 0;
-    char *hello_data = "hello from fuse\n";
-    files[files_len].data_len = strlen(hello_data);
-    memcpy(files[files_len].data, hello_data, files[files_len].data_len);
-    files_len++;
-}

@@ -7,3 +7,5 @@ typedef struct {
     super_block_t *super_block;
     block_device_t *dev;
 } fs_t;
+
+void create_new_fs(char* path);

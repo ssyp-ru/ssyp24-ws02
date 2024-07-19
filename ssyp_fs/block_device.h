@@ -5,7 +5,7 @@
 
 #define DEVICE_BLOCK_SIZE 512
 
-#define STD_BLOCK_DEV_NAME "ssyp.fs"
+#define STD_BLOCK_DEV_NAME "db.fs"
 
 typedef struct {
     int fd;
@@ -17,5 +17,7 @@ void close_block_device(block_device_t *dev);
 
 void get_blocks(block_device_t *dev, int from_block_id, int num, char* bytes);
 void set_blocks(block_device_t *dev, int from_block_id, int num, char* bytes);
+
+int is_exist(char* path);
 
 #endif
