@@ -29,5 +29,6 @@ typedef struct {
 
 void super_block_to_bytes(super_block_t *super_block, char *bytes);
 void bytes_to_super_block(char *bytes, super_block_t *super_block);
+void super_block_to_bytes_test();
 
 #endif
