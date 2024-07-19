@@ -103,9 +103,6 @@ void write_tga(char *filename, int width, int height, int channels, uint8_t *dat
     fclose(tga);
 }                                                                                        
 
-#define width 100
-#define height 100
-
 void set_pixel(uint8_t *data, int x, int y, int r, int g, int b, int image_width) {
     int index = (x * image_width + y) * 3;
     data[index] = b;
@@ -119,10 +116,16 @@ int main() {
     uint8_t *data = malloc(width * height * 3);
     for (int x = 0; x < height; x++) {
         for (int y = 0; y < width; y++) {
-            set_pixel(data, x, y, 100, 0, 255, width);
-        }
-    }
-
+            set_pixel(data, x, y, 0, 255, 0, width);
+		int width = 250;
+		int height = 250;
+  		 for ( int x = 0; x < height;x++) {
+			   for ( int y = 0;y < width; y++) {
+				   set_pixel (data, x, y, 255, 0, 0, width);
+	  			 }	
+  			 }
+		}
+   	 }
     write_tga("test.tga", width, height, 3, data);
     return 0;
 }
