@@ -27,7 +27,7 @@ int32_t bytes_to_int(char *bytes) {
 int64_t bytes_to_int64(char *bytes) {
     return ((int64_t)bytes[7] << 56) | ((int64_t)bytes[6] << 48) | ((int64_t)bytes[5] << 40) |
            ((int64_t)bytes[4] << 32) | ((int64_t)bytes[3] << 24) | ((int64_t)bytes[2] << 16) |
-           ((int64_t)bytes[1] << 8) | (int64_t)bytes[0];
+           ((int64_t)bytes[1] << 8) | ((int64_t)bytes[0] & 0xff);
 }
 
 void int_to_bytes_test() {
