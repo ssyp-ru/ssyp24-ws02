@@ -11,6 +11,7 @@ void create_new_fs(char *path) {
     super_block->block_size = 4096;
     super_block->total_blocks = 262144;
     super_block->used_blocks = 0;
+    super_block->root_dir_block_id = 1;
     super_block->first_journal_block = 0;
     super_block->total_journal_blocks = 0;
     super_block->first_bitmap_blocks = 0;
@@ -19,7 +20,7 @@ void create_new_fs(char *path) {
     inode_t *inode = malloc(sizeof(inode_t));
     inode->magic = INODE_MAGIC;
     inode->type = INODE_TYPE_DIRECTORY;
-    inode->inode_id = 2;
+    inode->inode_id = 0;
     inode->uid = 1;
     inode->gid = 1;
     inode->flags = 0;
@@ -33,8 +34,8 @@ void create_new_fs(char *path) {
 
     inode_directory_short_form_t *b = malloc(sizeof(inode_directory_short_form_t));
     b->type = INODE_TYPE_DIRECTORY;
-    b->inode_id = 2;
-    b->block_id = 0;
+    b->inode_id = 0;
+    b->block_id = 1;
     b->name_len = 4;
     b->name = "root";
     inode->dir_blocks = b;

@@ -25,18 +25,25 @@ int32_t bytes_to_int(char *bytes) {
 }
 
 int64_t bytes_to_int64(char *bytes) {
-    return ((int64_t)bytes[7] << 56) | ((int64_t)bytes[6] << 48) | ((int64_t)bytes[5] << 40) |
-           ((int64_t)bytes[4] << 32) | (bytes[3] << 24) | (bytes[2] << 16) | (bytes[1] << 8) | bytes[0];
+    return (((int64_t)bytes[7] & 0xff) << 56) | (((int64_t)bytes[6] & 0xff) << 48) |
+           (((int64_t)bytes[5] & 0xff) << 40) | (((int64_t)bytes[4] & 0xff) << 32) |
+           (((int64_t)bytes[3] & 0xff) << 24) | (((int64_t)bytes[2] & 0xff) << 16) | (((int64_t)bytes[1] & 0xff) << 8) |
+           ((int64_t)bytes[0] & 0xff);
 }
 
 void int_to_bytes_test() {
     char bytes[8];
+    char bytes2[16];
     int32_t value32 = 0x12345678;
-    // int64_t value64 = 0x123456789abcdef;
+    int64_t value64 = 0x123456789abcdef;
 
     int_to_bytes(value32, bytes);
+    int_to_bytes64(value64, bytes2);
     int32_t res32 = bytes_to_int(bytes);
+    int64_t res64 = bytes_to_int64(bytes2);
 
     printf("%d %d\n", value32, res32);
+    printf("%ld %ld\n", value64, res64);
     assert(value32 == res32);
+    assert(value64 == res64);
 }

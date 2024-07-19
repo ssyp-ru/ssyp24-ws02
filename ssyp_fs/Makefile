@@ -11,7 +11,7 @@ ssyp_fs: $(OBJ) $(HDR) main.o
 	gcc $(OBJ) main.o -o ssyp_fs $(LFLAGS)
 
 test: $(OBJ) $(HDR) main_test.o
-	gcc $(OBJ) main_test.o -o test
+	gcc $(OBJ) main_test.o -o test -g
 
 %.o : %.c $(HDR)
 	gcc -c $(CFLAGS) $< -o $@
