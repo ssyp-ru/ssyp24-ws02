@@ -1,5 +1,5 @@
 #include <assert.h>
-    
+
 #include "ptest.h"
 
 int add(int a, int b) {
@@ -12,11 +12,11 @@ int add(int a, int b) {
 void ordinary_test() {
     int expected = 10;
     int res = add(3, 7);
-    assert(res == expected);	
+    assert(res == expected);
 }
 
 void property_test(ptest_ctx *ctx) {
-    int a = ptest_int_range(ctx, 0, 10, "a");	
+    int a = ptest_int_range(ctx, 0, 10, "a");
     int b = ptest_int_range(ctx, 0, 10, "b");
     int res = add(a, b);
     if (res != a + b) {
@@ -25,7 +25,7 @@ void property_test(ptest_ctx *ctx) {
 }
 
 int main() {
-    //ordinary_test();
-    
+    // ordinary_test();
+
     ptest_run(property_test);
 }
