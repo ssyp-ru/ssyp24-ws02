@@ -15,8 +15,11 @@ jobs:
     - name: Install fuse3
       run: sudo apt-get install -y libfuse3-dev
 
-    - name: make
+    - name: build
       run: make
 
-    - name: make check_format
+    - name: check_format
       run: make check_format
+
+    - name: tests
+      run: make run_test
