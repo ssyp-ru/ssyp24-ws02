@@ -38,7 +38,10 @@ typedef struct {
     inode_directory_short_form_t* dir_blocks;
     block_section* file_block;
     // and now we have 'data_elems' elements of types depending on 'data_type'
-} inode;
+} inode_t;
 
+
+void inode_to_bytes(inode_t *inode, char *bytes);
+void bytes_to_inode(char *bytes, inode_t *inode);
 
 #endif

@@ -3,8 +3,8 @@ build: ssyp_fs test
 CFLAGS=-Werror -Wall -pedantic `pkg-config fuse3 --cflags`
 LFLAGS=`pkg-config fuse3 --libs`
 
-SRC=allocator.c block.c block_device.c fs_command.c utils.c
-HDR=allocator.h block.h block_device.h fs_command.h utils.h
+SRC=allocator.c block_device.c fs_command.c utils.c fs.c inode.c super_block.c
+HDR=allocator.h block_device.h fs_command.h utils.h fs.h inode.h super_block.h
 OBJ=$(SRC:.c=.o)
 
 ssyp_fs: $(OBJ) $(HDR) main.o

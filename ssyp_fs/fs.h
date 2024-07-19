@@ -1,11 +1,9 @@
 #include "block_device.h"
-#include "block.h"
+#include "super_block.h"
 
 #define FS_BLOCK_SIZE = 4096
 
 typedef struct {
-    // TODO: current superblock
-    super_block *super_block;
-
-    block_device *dev;
-} fs;
+    super_block_t *super_block;
+    block_device_t *dev;
+} fs_t;
