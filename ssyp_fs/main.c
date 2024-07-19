@@ -2,6 +2,7 @@
 #include "fs.h"
 #include "fs_command.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 static struct fuse_operations operations = {
     .getattr = do_getattr,
@@ -39,5 +40,8 @@ int main(int argc, char *argv[]) {
         }
         create_new_fs(STD_BLOCK_DEV_NAME);
     }
+    //super_block_t* super_block = malloc(sizeof(super_block_t));
+    //inode_t* inode = malloc(sizeof(inode_t));
+    initialize_fs(STD_BLOCK_DEV_NAME);
     return fuse_main(argc, argv, &operations, NULL);
 }

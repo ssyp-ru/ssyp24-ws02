@@ -3,6 +3,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <string.h>
+#include <errno.h>
 
 #include "block_device.h"
 
@@ -18,7 +20,10 @@ void close_block_device(block_device_t *dev) {
 
 void get_blocks(block_device_t *dev, int from_block_id, int num, char *bytes) {
     // TODO: check for max device size
-    size_t size = pread(dev->fd, bytes, num * DEVICE_BLOCK_SIZE, from_block_id * DEVICE_BLOCK_SIZE);
+    ssize_t size = pread(dev->fd, bytes, num * DEVICE_BLOCK_SIZE, from_block_id * DEVICE_BLOCK_SIZE);
+    if (size < 0) {
+        printf("error while pread: %s, size: %d, offset: %d\n", strerror(errno), num * DEVICE_BLOCK_SIZE, from_block_id * DEVICE_BLOCK_SIZE);
+    }
     assert(size == num * DEVICE_BLOCK_SIZE);
 }
 
