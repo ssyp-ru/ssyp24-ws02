@@ -26,5 +26,6 @@ static struct fuse_operations operations = {
 };
 
 int main(int argc, char *argv[]) {
+    init_fs();
     return fuse_main(argc, argv, &operations, NULL);
 }
