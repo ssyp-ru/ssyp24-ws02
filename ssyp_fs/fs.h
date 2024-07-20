@@ -17,7 +17,8 @@ void create_new_fs(block_device_t *dev);
 void initialize_fs(block_device_t *dev);
 fs_t* get_fs();
 
-inode_t* search_inode_by_path(char *path, fs_t *fs);
+inode_t* search_inode_by_path(const char *path, fs_t *fs);
+int add_inode_to_fs(inode_t *parent, int parent_block_id, inode_t *new, char *name, int name_len, fs_t *fs);
 
 // tests
 

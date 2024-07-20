@@ -1,4 +1,7 @@
 #include "fs_command.h"
+#include "inode.h"
+#include "fs.h"
+#include "allocator.h"
 
 #include <errno.h>
 #include <stddef.h>
@@ -11,34 +14,35 @@
 
 int do_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) {
     printf("FUSE: do_getattr: %s\n", path);
-
+    
+    inode_t* current_inode = search_inode_by_path(path, get_fs());
     memset(stbuf, 0, sizeof(struct stat));
-    if (strcmp(path, "/") == 0) {
+    if (!current_inode) return -ENOENT;
+    if (current_inode->type == INODE_TYPE_DIRECTORY) {
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2;
+        return 0;
     } else {
         stbuf->st_mode = S_IFREG | 0666;
         stbuf->st_nlink = 1;
         stbuf->st_size = 20;
         stbuf->st_uid = 666;
         stbuf->st_gid = 666;
+        return 0;
     }
-
-    return 0;
 }
 
 int do_readdir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi,
                enum fuse_readdir_flags flags) {
     printf("FUSE: do_readdir: %s\n", path);
 
-    filler(buffer, ".", NULL, 0, 0);  // Current Directory
-    filler(buffer, "..", NULL, 0, 0); // Parent Directory
-
-    if (strcmp(path, "/") == 0) // If the user is trying to show the files/directories of the root
-                                // directory show the following
-    {
-        filler(buffer, "hello1", NULL, 0, 0);
-        filler(buffer, "hello2", NULL, 0, 0);
+    //filler(buffer, ".", NULL, 0, 0);  // Current Directory
+    //filler(buffer, "..", NULL, 0, 0); // Parent Directory
+    
+    inode_t* current_inode = search_inode_by_path(path, get_fs());
+    if (!current_inode) return -ENOENT;
+    for (int i = 0; i < current_inode->data_elems; i++) {
+        filler(buffer, current_inode->dir_blocks[i].name, NULL, 0, 0);
     }
 
     return 0;
@@ -46,13 +50,8 @@ int do_readdir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t off
 
 int do_open(const char *path, struct fuse_file_info *fi) {
     printf("FUSE: do_open=%s\n", path);
-    if (strcmp(path + 1, "hello1") != 0)
-        return -ENOENT;
-
-    if ((fi->flags & O_ACCMODE) != O_RDONLY)
-        return 0;
-    // return -EACCES;
-
+    inode_t* current_inode = search_inode_by_path(path, get_fs());
+    if (!current_inode) return -ENOENT;
     return 0;
 }
 
@@ -150,6 +149,30 @@ void do_destroy(void *private_data) {
 }
 
 int do_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
+    block_section section = allocate_blocks(get_fs(), 100);
+    inode_t* file1 = malloc(sizeof(inode_t));
+    file1->inode_id = get_fs()->super_block->used_blocks+1;
+    file1->magic = INODE_MAGIC;
+    file1->type = INODE_TYPE_REGULAR;
+    file1->uid = 1;
+    file1->gid = 1;
+    file1->flags = S_IFREG | 0666;
+    file1->file_size = 0;
+    file1->data_type = 0;
+    file1->data_elems = 0;
+
+    char cur_c;
+    int cur_i = strlen(path)-1;
+    while (cur_c != '/') {
+        cur_c = path[cur_i];
+        cur_i--;
+    }
+    char* parent_path;
+    strncpy(parent_path, path, cur_i+1);
+    uint64_t* block_id;
+    inode_t* parent = search_inode_by_path(parent_path, get_fs());
+    add_inode_to_fs(parent, *block_id, file1, path+cur_i+1, strlen(path+cur_i+1), get_fs());
+
     printf("FUSE: do_create, path=%s\n", path);
     return 0;
 }
