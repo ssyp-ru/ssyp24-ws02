@@ -39,7 +39,6 @@ int do_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) 
     return -ENOENT;
 }
 
-
 int do_readdir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi,
                enum fuse_readdir_flags flags) {
     printf("FUSE: do_readdir: %s\n", path);
@@ -48,7 +47,7 @@ int do_readdir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t off
     filler(buffer, "..", NULL, 0, 0); // Parent Directory
     printf("files_len: %d\n", files_len);
 
-     if (strcmp(path, "/") == 0) { // If the user is trying to show the files/directories of the root
+    if (strcmp(path, "/") == 0) { // If the user is trying to show the files/directories of the root
                                   // directory show the following
         for (int i = 1; i < files_len; i++) {
             filler(buffer, files[i].path + 1, NULL, 0, 0);
