@@ -156,6 +156,7 @@ int do_write(const char *path, const char *buffer, size_t buffer_size, off_t off
             memcpy(files[i].data + offset, buffer, buffer_size);
             printf("-> %c %c %c %c\n", files[i].data[4], files[i].data[5], files[i].data[6], files[i].data[7]);
             printf("%s\n---\n%s %ld %d\n", files[i].data, buffer, buffer_size, files[i].data_len);
+            files[i].stat.st_size = files[i].data_len;
             return buffer_size;
         }
     }
