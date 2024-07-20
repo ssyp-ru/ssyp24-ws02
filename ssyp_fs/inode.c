@@ -72,3 +72,11 @@ void bytes_to_inode(char *bytes, inode_t *inode) {
         assert(0 && "not supported yet");
     }
 }
+
+void short_form_serialize_test() {
+    //inode_directory_short_form_t sf;
+    //sf.inode_id = 3;
+    //sf.block_id = 4;
+
+    //short_
+}

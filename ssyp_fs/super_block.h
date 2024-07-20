@@ -23,7 +23,7 @@ typedef struct {
 
     uint64_t first_bitmap_blocks;
     uint32_t total_bitmap_blocks;
-
+    uint64_t used_inodes;
     // TODO: padding
 } super_block_t;
 

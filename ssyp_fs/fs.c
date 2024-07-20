@@ -4,6 +4,7 @@
 #include "inode.h"
 #include "super_block.h"
 
+#include <assert.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,7 +22,7 @@ void create_new_fs(block_device_t *dev) {
     super_block->first_journal_block = 0;
     super_block->total_journal_blocks = 0;
     super_block->first_bitmap_blocks = 2;
-    super_block->total_bitmap_blocks = super_block->total_blocks / 8 / 4096;
+    super_block->total_bitmap_blocks = super_block->total_blocks / 8 / FS_BLOCK_SIZE;
 
     inode_t *inode = malloc(sizeof(inode_t));
     inode->magic = INODE_MAGIC;
@@ -82,7 +83,7 @@ fs_t *get_fs() {
     return &filesystem;
 }
 
-char *get_next_slash(char *s) {
+const char *get_next_slash(const char *s) {
     while (*s != 0) {
         if (*s == '/') {
             break;
@@ -113,20 +114,21 @@ int add_inode_to_fs(inode_t *parent, int parent_block_id, inode_t *new, char *na
     return block_id.start;
 }
 
-inode_t *search_inode_by_path(char *path, fs_t *fs) {
+inode_t *search_inode_by_path(const char *path, fs_t *fs, unit64_t* block_id) {
     inode_t *inode = fs->root_inode;
     path++; // get rid of first '/'
 
     char *bytes = malloc(FS_BLOCK_SIZE);
 
     while (1) {
-        char *next = get_next_slash(path);
+        const char *next = get_next_slash(path);
 
         if (inode->type == INODE_TYPE_REGULAR) {
             // TODO:
         }
 
         int name_len = next - path;
+        int found = 0;
         for (int i = 0; i < inode->data_elems; i++) {
             if (name_len != inode->dir_blocks[i].name_len) {
                 continue;
@@ -141,7 +143,12 @@ inode_t *search_inode_by_path(char *path, fs_t *fs) {
 
             bytes_to_inode(bytes, cur);
             inode = cur;
+            block_id = inode->dir_blocks[i].block_id;
+            found = 1;
             break;
+        }
+        if (!found) {
+            return NULL;
         }
         if (*next == 0) {
             return inode;
@@ -180,6 +187,7 @@ void search_inode_by_path_test() {
     dir2->data_type = 0;
     dir2->data_elems = 0;
     block_id = add_inode_to_fs(dir1, block_id, dir2, "dir2", 4, fs);
+
     inode_t *dir3 = malloc(sizeof(inode_t));
     dir3->inode_id = 5;
     dir3->magic = INODE_MAGIC;
@@ -192,12 +200,28 @@ void search_inode_by_path_test() {
     dir3->data_elems = 0;
     add_inode_to_fs(dir2, block_id, dir3, "dir3", 4, fs);
 
+    inode_t* file1 = malloc(sizeof(inode_t));
+    file1->inode_id = 6;
+    file1->magic = INODE_MAGIC;
+    file1->type = INODE_TYPE_REGULAR;
+    file1->uid = 1;
+    file1->gid = 1;
+    file1->flags = S_IFREG | 0666;
+    file1->file_size = 0;
+    file1->data_type = 0;
+    file1->data_elems = 0;
+    add_inode_to_fs(fs->root_inode, fs->super_block->root_dir_block_id, file1, "file1", 5, fs);
+
     inode_t *s1 = search_inode_by_path("/dir1", fs);
     printf("%ld\n", s1->inode_id);
 
     inode_t *s2 = search_inode_by_path("/dir1/dir2", fs);
+    assert(s2 != NULL);
     printf("%ld\n", s2->inode_id);
 
     inode_t *s3 = search_inode_by_path("/dir1/dir2/dir3", fs);
     printf("%ld\n", s3->inode_id);
+
+    inode_t *s4 = search_inode_by_path("/file1", fs);
+    printf("%p\n", (void*)s4);
 }
