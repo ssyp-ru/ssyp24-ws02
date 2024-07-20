@@ -9,10 +9,13 @@
 
 typedef struct {
     int fd;
+    char* in_mem_data;
+    size_t device_size;
 } block_device_t;
 
 
-void open_block_device(char *file_path, block_device_t *dev);
+void open_block_device(char *file_path, block_device_t *dev, size_t max_size);
+void open_in_memory_block_device(block_device_t *dev, size_t max_size);
 void close_block_device(block_device_t *dev);
 
 void get_blocks(block_device_t *dev, int from_block_id, int num, char* bytes);

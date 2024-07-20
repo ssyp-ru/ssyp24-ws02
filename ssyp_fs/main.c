@@ -30,6 +30,7 @@ static struct fuse_operations operations = {
 };
 
 int main(int argc, char *argv[]) {
+    size_t max_fs_size = 1024 * 1024 * 1024;
     if (is_exist(STD_BLOCK_DEV_NAME) == 0) {
         printf("Device not found, create %s? (Y/n) ", STD_BLOCK_DEV_NAME);
         char choice;
@@ -38,10 +39,13 @@ int main(int argc, char *argv[]) {
             printf("abort\n");
             return 0;
         }
-        create_new_fs(STD_BLOCK_DEV_NAME);
+        block_device_t dev;
+        open_block_device(STD_BLOCK_DEV_NAME, &dev, max_fs_size);
+        create_new_fs(&dev);
+        close_block_device(&dev);
     }
-    //super_block_t* super_block = malloc(sizeof(super_block_t));
-    //inode_t* inode = malloc(sizeof(inode_t));
-    initialize_fs(STD_BLOCK_DEV_NAME);
+    block_device_t *dev = malloc(sizeof(block_device_t));
+    open_block_device(STD_BLOCK_DEV_NAME, dev, max_fs_size);
+    initialize_fs(dev);
     return fuse_main(argc, argv, &operations, NULL);
 }
