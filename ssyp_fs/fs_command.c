@@ -9,29 +9,13 @@
 #include <time.h>
 #include <unistd.h>
 
-#define MAX_FILE_NUM 10
-#define MAX_FILE_SIZE 256
-
-typedef struct {
-    char path[256];
-    char data[MAX_FILE_SIZE];
-    int data_len;
-    struct stat stat;
-} file;
-
-file files[MAX_FILE_NUM];
-int files_len = 0;
-
 int do_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) {
     printf("FUSE: do_getattr: %s\n", path);
-    (void)fi;
-    int res = 0;
 
     memset(stbuf, 0, sizeof(struct stat));
     if (strcmp(path, "/") == 0) {
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2;
-        //} else if (strcmp(path + 1, options.filename) == 0) {
     } else {
         stbuf->st_mode = S_IFREG | 0666;
         stbuf->st_nlink = 1;
@@ -40,7 +24,7 @@ int do_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) 
         stbuf->st_gid = 666;
     }
 
-    return res;
+    return 0;
 }
 
 int do_readdir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi,

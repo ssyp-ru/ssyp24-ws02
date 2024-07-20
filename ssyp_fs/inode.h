@@ -15,7 +15,7 @@ typedef struct {
     uint64_t inode_id;
     uint64_t block_id;
     uint8_t name_len;
-    char *name;
+    char name[256];
 } inode_directory_short_form_t ;
 
 typedef struct {
@@ -35,7 +35,7 @@ typedef struct {
     uint8_t data_type; // 0 - inode short form, 1 - file data blocks
     uint32_t data_elems;
     // One of them will be NULL (depending of inode type (dir/reg)):
-    inode_directory_short_form_t* dir_blocks;
+    inode_directory_short_form_t dir_blocks[100];
     block_section* file_block;
     // and now we have 'data_elems' elements of types depending on 'data_type'
 } inode_t;
@@ -43,5 +43,6 @@ typedef struct {
 
 void inode_to_bytes(inode_t *inode, char *bytes);
 void bytes_to_inode(char *bytes, inode_t *inode);
+
 
 #endif
