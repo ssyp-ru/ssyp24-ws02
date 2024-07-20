@@ -1,4 +1,8 @@
+#include "block_device.h"
+#include "fs.h"
 #include "fs_command.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 static struct fuse_operations operations = {
     .getattr = do_getattr,
@@ -26,6 +30,22 @@ static struct fuse_operations operations = {
 };
 
 int main(int argc, char *argv[]) {
-    init_fs("fs.db");
+    size_t max_fs_size = 1024 * 1024 * 1024;
+    if (is_exist(STD_BLOCK_DEV_NAME) == 0) {
+        printf("Device not found, create %s? (Y/n) ", STD_BLOCK_DEV_NAME);
+        char choice;
+        scanf("%c", &choice);
+        if (choice != 'y' && choice != 'Y' && choice != '\n') {
+            printf("abort\n");
+            return 0;
+        }
+        block_device_t dev;
+        open_block_device(STD_BLOCK_DEV_NAME, &dev, max_fs_size);
+        create_new_fs(&dev);
+        close_block_device(&dev);
+    }
+    block_device_t *dev = malloc(sizeof(block_device_t));
+    open_block_device(STD_BLOCK_DEV_NAME, dev, max_fs_size);
+    initialize_fs(dev);
     return fuse_main(argc, argv, &operations, NULL);
 }

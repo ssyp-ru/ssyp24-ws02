@@ -1,12 +1,49 @@
 #include "utils.h"
+#include <assert.h>
+#include <stdio.h>
 
 void int_to_bytes(int32_t data, char *bytes) {
     bytes[0] = (char)data;
-    bytes[1] = (char)((data >> 8) & 0xFF);
-    bytes[2] = (char)((data >> 16) & 0xFF);
-    bytes[3] = (char)((data >> 24) & 0xFF);
+    bytes[1] = (char)(data >> 8);
+    bytes[2] = (char)(data >> 16);
+    bytes[3] = (char)(data >> 24);
+}
+
+void int_to_bytes64(int64_t data, char *bytes) {
+    bytes[0] = (char)data;
+    bytes[1] = (char)(data >> 8);
+    bytes[2] = (char)(data >> 16);
+    bytes[3] = (char)(data >> 24);
+    bytes[4] = (char)(data >> 32);
+    bytes[5] = (char)(data >> 40);
+    bytes[6] = (char)(data >> 48);
+    bytes[7] = (char)(data >> 56);
 }
 
 int32_t bytes_to_int(char *bytes) {
     return (bytes[3] << 24) | (bytes[2] << 16) | (bytes[1] << 8) | bytes[0];
+}
+
+int64_t bytes_to_int64(char *bytes) {
+    return (((int64_t)bytes[7] & 0xff) << 56) | (((int64_t)bytes[6] & 0xff) << 48) |
+           (((int64_t)bytes[5] & 0xff) << 40) | (((int64_t)bytes[4] & 0xff) << 32) |
+           (((int64_t)bytes[3] & 0xff) << 24) | (((int64_t)bytes[2] & 0xff) << 16) | (((int64_t)bytes[1] & 0xff) << 8) |
+           ((int64_t)bytes[0] & 0xff);
+}
+
+void int_to_bytes_test() {
+    char bytes[8];
+    char bytes2[16];
+    int32_t value32 = 0x12345678;
+    int64_t value64 = 0x123456789abcdef;
+
+    int_to_bytes(value32, bytes);
+    int_to_bytes64(value64, bytes2);
+    int32_t res32 = bytes_to_int(bytes);
+    int64_t res64 = bytes_to_int64(bytes2);
+
+    printf("%d %d\n", value32, res32);
+    printf("%ld %ld\n", value64, res64);
+    assert(value32 == res32);
+    assert(value64 == res64);
 }

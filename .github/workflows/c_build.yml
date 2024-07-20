@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install fuse3
+      run: sudo apt-get install -y libfuse3-dev
+
+    - name: build
+      run: make
+
+    - name: check_format
+      run: make check_format
+
+    - name: tests
+      run: make run_test
