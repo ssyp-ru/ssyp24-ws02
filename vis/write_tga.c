@@ -69,6 +69,10 @@ void write_tga(char *filename, int width, int height, int channels, uint8_t *dat
     FILE *tga;
     targa_header header;
 
+    int x,y;
+
+    //set header values 
+
     header.id_length = 0;
     header.map_type = 0;
     header.image_type = 2; // uncompressed RGB image
@@ -85,15 +89,19 @@ void write_tga(char *filename, int width, int height, int channels, uint8_t *dat
     header.bits_per_pixel = 24;
     header.misc = 0x20;
 
+    // start to write file 
+
     tga = fopen(filename, "wb");
     write_tga_header(header, tga);
+ 
+    //// magic happens here -- write the pixels
 
     for (int i = 0; i < width * height * channels; i++) {
         fputc(data[i], tga);
     }
 
     fclose(tga);
-}
+}                                                                                        
 
 void set_pixel(uint8_t *data, int x, int y, int r, int g, int b, int image_width) {
     int index = (x * image_width + y) * 3;
@@ -108,10 +116,16 @@ int main() {
     uint8_t *data = malloc(width * height * 3);
     for (int x = 0; x < height; x++) {
         for (int y = 0; y < width; y++) {
-            set_pixel(data, x, y, 100, 0, 255, width);
-        }
-    }
-
+            set_pixel(data, x, y, 0, 255, 0, width);
+		int width = 250;
+		int height = 250;
+  		 for ( int x = 0; x < height;x++) {
+			   for ( int y = 0;y < width; y++) {
+				   set_pixel (data, x, y, 255, 0, 0, width);
+	  			 }	
+  			 }
+		}
+   	 }
     write_tga("test.tga", width, height, 3, data);
     return 0;
 }
