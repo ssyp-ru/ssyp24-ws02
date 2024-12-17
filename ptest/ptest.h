@@ -1,6 +1,8 @@
 #ifndef PTEST_H
 #define PTEST_H
 
+#include <stdio.h>
+#include <aio.h>
 typedef struct {
     char name[16];
     int value;
