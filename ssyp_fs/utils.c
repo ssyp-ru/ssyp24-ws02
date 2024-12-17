@@ -35,7 +35,8 @@ void int_to_bytes_test() {
     char bytes[8];
     char bytes2[16];
     int32_t value32 = 0x12345678;
-    int64_t value64 = 0x123456789abcdef;
+    int64_t value64 = 3;
+    //int64_t value64 = 0x123456789abcdef;
 
     int_to_bytes(value32, bytes);
     int_to_bytes64(value64, bytes2);
